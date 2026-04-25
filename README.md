@@ -31,3 +31,5 @@
 #       안된다고 뜰거임
 #       소스에서 contractAddress를 리믹스에서 배포한 contract 주소로 변경 후 다시시도
 #       DAPP을 통해서 상호작용
+
+# tested by thejmh
