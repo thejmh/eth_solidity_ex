@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple dApp</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+</head>
+<body>
+    <h2>Simple Storage dApp</h2>
+    
+    <button onclick="connectWallet()">지갑 연결</button>
+    <p id="account"></p>
+
+    <hr/>
+
+    <input type="number" id="newValue" placeholder="숫자 입력">
+    <button onclick="setValue()">블록체인에 저장</button>
+    <button onclick="getValue()">값 불러오기</button>
+    
+    <p>현재 저장된 값: <span id="displayValue">?</span></p>
+
+    <script>
+        let contract;
+        // 1. Remix에서 배포 후 받은 Contract Address를 여기에 넣으세요
+        const contractAddress = "0xF694b11d369bEcd384737D1C6480c1C5041a4220";
+        // 2. ABI (Remix의 Compiler 탭 하단에서 복사 가능)
+        const abi = [
+            "function set(uint256 x) public",
+            "function get() public view returns (uint256)"
+        ];
+
+        async function connectWallet() {
+            if (window.ethereum) {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                const signer = provider.getSigner();
+                contract = new ethers.Contract(contractAddress, abi, signer);
+                
+                const address = await signer.getAddress();
+                document.getElementById("account").innerText = "연결된 주소: " + address;
+            } else {
+                alert("메타마스크를 설치해주세요!");
+            }
+        }
+
+        async function setValue() {
+            const val = document.getElementById("newValue").value;
+            const tx = await contract.set(val);
+            await tx.wait(); // 트랜잭션 확정 대기
+            alert("저장 완료!");
+        }
+
+        async function getValue() {
+            const val = await contract.get();
+            document.getElementById("displayValue").innerText = val;
+        }
+    </script>
+</body>
+</html>
