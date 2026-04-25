@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Counter DApp</title>
+</head>
+<body>
+
+<h2>Counter DApp</h2>
+
+<p>Count: <span id="count">-</span></p>
+
+<button onclick="connect()">지갑 연결</button>
+<button onclick="getCount()">조회</button>
+<button onclick="increment()">+1 증가</button>
+
+<!-- ethers v6 UMD -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+
+<script>
+const { ethers } = window;
+
+let provider;
+let signer;
+let contract;
+
+// 🔥 반드시 Remix에서 새로 배포한 주소 넣기
+const contractAddress = "0x74CC98219FFe77BDBcD59c24046615e57cD348B4";
+
+const abi = [
+  "function increment()",
+  "function getCount() view returns (uint256)"
+];
+
+// 지갑 연결 + 검증
+async function connect() {
+  try {
+    if (!window.ethereum) {
+      alert("MetaMask 설치 필요");
+      return;
+    }
+
+    provider = new ethers.BrowserProvider(window.ethereum);
+
+    await provider.send("eth_requestAccounts", []);
+    signer = await provider.getSigner();
+
+    // 네트워크 확인
+    const network = await provider.getNetwork();
+    console.log("chainId:", network.chainId.toString());
+
+    // 🔥 컨트랙트 존재 여부 체크
+    const code = await provider.getCode(contractAddress);
+
+    if (code === "0x") {
+      alert("❌ 해당 주소에 컨트랙트 없음 (주소 or 네트워크 오류)");
+      return;
+    }
+
+    contract = new ethers.Contract(contractAddress, abi, signer);
+
+    alert("지갑 연결 완료");
+
+  } catch (e) {
+    console.error(e);
+    alert("연결 실패");
+  }
+}
+
+// 값 조회
+async function getCount() {
+  try {
+    if (!contract) {
+      alert("먼저 지갑 연결");
+      return;
+    }
+
+    const value = await contract.getCount();
+
+    document.getElementById("count").innerText = value.toString();
+
+  } catch (e) {
+    console.error(e);
+    alert("❌ 조회 실패 (주소 / ABI / 네트워크 확인)");
+  }
+}
+
+// +1 증가
+async function increment() {
+  try {
+    if (!contract) {
+      alert("먼저 지갑 연결");
+      return;
+    }
+
+    const tx = await contract.increment();
+
+    console.log("tx hash:", tx.hash);
+
+    await tx.wait();
+
+    alert("트랜잭션 완료");
+
+    getCount();
+
+  } catch (e) {
+    console.error(e);
+    alert("❌ 트랜잭션 실패");
+  }
+}
+
+// 🔥 계정 변경 대응
+if (window.ethereum) {
+  window.ethereum.on("accountsChanged", () => {
+    location.reload();
+  });
+
+  window.ethereum.on("chainChanged", () => {
+    location.reload();
+  });
+}
+</script>
+
+</body>
+</html>
